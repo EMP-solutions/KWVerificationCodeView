@@ -8,7 +8,7 @@
 
 import UIKit
 
-public protocol KWVerificationCodeViewDelegate: class {
+@objc public protocol KWVerificationCodeViewDelegate: class {
   func didChangeVerificationCode()
 }
 
@@ -17,7 +17,7 @@ public protocol KWVerificationCodeViewDelegate: class {
   // MARK: - Constants
   private let minDigits: UInt8 = 2
   private let maxDigits: UInt8 = 8
-  private let textFieldViewLeadingSpace: CGFloat = 10
+  private let textFieldViewLeadingSpace: CGFloat = 15
   private let textFieldViewVerticalSpace: CGFloat = 6
 
   // MARK: - IBInspectables
@@ -47,24 +47,25 @@ public protocol KWVerificationCodeViewDelegate: class {
 
   @IBInspectable public var digits: UInt8 = 4 {
     didSet {
-      setupTextFieldViews()
+      updateNumberOfDigits()
+      //setupTextFieldViews()
     }
   }
 
   @IBInspectable public var textSize: CGFloat = 24.0 {
     didSet {
       for textFieldView in textFieldViews {
-        textFieldView.numberTextField.font = UIFont.systemFont(ofSize: textSize)
+        textFieldView.numberTextField.font = UIFont.systemFont(ofSize: ((UI_USER_INTERFACE_IDIOM() == .pad) ? 28 :textSize))
       }
     }
   }
 
   @IBInspectable public var textFont: String = "" {
     didSet {
-      if let font = UIFont(name: textFont.trim(), size: textSize) {
+      if let font = UIFont(name: textFont.trim(), size: ((UI_USER_INTERFACE_IDIOM() == .pad) ? 28 :textSize)) {
         textFieldFont = font
       } else {
-        textFieldFont = UIFont.systemFont(ofSize: textSize)
+        textFieldFont = UIFont.systemFont(ofSize: ((UI_USER_INTERFACE_IDIOM() == .pad) ? 28 :textSize))
       }
 
       for textFieldView in textFieldViews {
@@ -132,7 +133,7 @@ public protocol KWVerificationCodeViewDelegate: class {
     }
   }
 
-  weak public var delegate: KWVerificationCodeViewDelegate?
+  @objc weak public var delegate: KWVerificationCodeViewDelegate?
 
   // MARK: - Lifecycle
   override public init(frame: CGRect) {
@@ -176,12 +177,40 @@ public protocol KWVerificationCodeViewDelegate: class {
     delegate?.didChangeVerificationCode()
   }
 
+    public func resetVerificationCodeView(){
+        // updateNumberOfDigits()
+        textFieldViews.forEach { $0.numberTextField.text = ""}
+        textFieldViews[0].numberTextField.text = " "
+    }
+
   // MARK: - Private Methods
+    private func updateNumberOfDigits() {
+        textFieldViews.forEach { $0.removeFromSuperview() }
+        textFieldViews.removeAll()
+        
+        let textFieldViewWidth = (frame.size.width - (textFieldViewLeadingSpace * (CGFloat(requiredDigits) + 1))) / CGFloat(requiredDigits)
+        //  let textFieldViewHeight: CGFloat = ((UI_USER_INTERFACE_IDIOM() == .pad) ? 120 : frame.size.height) - (textFieldViewVerticalSpace * 2)
+        let textFieldViewHeight: CGFloat = frame.size.height - (textFieldViewVerticalSpace * 2)
+        var currentX = textFieldViewLeadingSpace
+        for _ in 0..<requiredDigits {
+            let textFieldView = KWTextFieldView(frame: CGRect(x: currentX, y: textFieldViewVerticalSpace, width: textFieldViewWidth, height: textFieldViewHeight))
+            textFieldView.autoresizingMask = [.flexibleLeftMargin, .flexibleRightMargin, .flexibleWidth]
+            addSubview(textFieldView)
+            textFieldView.delegate = self
+            textFieldViews.append(textFieldView)
+            
+            currentX += (textFieldViewWidth + textFieldViewLeadingSpace)
+        }
+        
+        textFieldViews[0].numberTextField.text = " "
+    }
+
   private func setup() {
     loadViewFromNib()
 
-    setupTextFieldViews()
+   // setupTextFieldViews()
     setupVerificationCodeView()
+    updateNumberOfDigits()
   }
 
   private func setupTextFieldViews() {

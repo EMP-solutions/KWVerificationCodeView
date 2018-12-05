@@ -97,7 +97,18 @@ protocol KWTextFieldDelegate: class {
   deinit {
     NotificationCenter.default.removeObserver(self)
   }
-
+// MARK: - Private Methods
+    private func setup() {
+        loadViewFromNib()
+        numberTextField.delegate = self
+        numberTextField.layer.borderWidth = 1;
+        numberTextField.layer.cornerRadius = 5.0;
+        numberTextField.layer.borderColor = UIColor(red: 173.0/255.0, green: 173.0/255.0, blue: 173.0/255.0, alpha: 1).cgColor
+        numberTextField.layer.masksToBounds = true
+        NotificationCenter.default.addObserver(self, selector: #selector(textFieldDidChange(_:)), name: NSNotification.Name.UITextFieldTextDidChange, object: numberTextField)
+        NotificationCenter.default.addObserver(self, selector: #selector(textfieldBeginEditing), name: NSNotification.Name.UITextFieldTextDidBeginEditing, object: numberTextField)
+        NotificationCenter.default.addObserver(self, selector: #selector(textfieldEndEditing), name: NSNotification.Name.UITextFieldTextDidEndEditing, object: numberTextField)
+    }
   // MARK: - Public Methods
   public func activate() {
     numberTextField.becomeFirstResponder()
@@ -115,24 +126,44 @@ protocol KWTextFieldDelegate: class {
     updateUnderline()
   }
 
-  // MARK: - Private Methods
-  private func setup() {
-    loadViewFromNib()
-    numberTextField.delegate = self
-    numberTextField.autocorrectionType = UITextAutocorrectionType.no
-
-    NotificationCenter.default.addObserver(self, selector: #selector(textFieldDidChange(_:)), name: UITextField.textDidChangeNotification, object: numberTextField)
-  }
-
-  private func updateUnderline() {
-    underlineView.backgroundColor = numberTextField.text?.trim() != "" ? underlineSelectedColor : underlineColor
-  }
-
-  @objc private func textFieldDidChange(_ notification: Foundation.Notification) {
-    if numberTextField.text?.count == 0 {
-      numberTextField.text = " "
+    // MARK: - FilePrivate Methods
+    dynamic fileprivate func textFieldDidChange(_ notification: Foundation.Notification) {
+        if numberTextField.text?.count == 0 {
+            numberTextField.text = " "
+        }
     }
-  }
+    
+    fileprivate func updateUnderline() {
+        underlineView.backgroundColor = numberTextField.text?.trim() != "" ? underlineSelectedColor : underlineColor
+    }
+    
+    dynamic fileprivate func textfieldBeginEditing(){
+        numberTextField.layer.borderWidth = 1;
+        numberTextField.layer.cornerRadius = 5.0;
+        numberTextField.layer.borderColor = UIColor(red: 28.0/255.0, green: 123.0/255.0, blue: 241.0/255.0, alpha: 1).cgColor
+        numberTextField.layer.masksToBounds = true
+    }
+    dynamic fileprivate func textfieldEndEditing(){
+        numberTextField.layer.borderWidth = 1;
+        numberTextField.layer.cornerRadius = 5.0;
+        numberTextField.layer.borderColor = UIColor(red: 173.0/255.0, green: 173.0/255.0, blue: 173.0/255.0, alpha: 1).cgColor
+        //[UIColor colorWithRed:173.0/255.0 green:173.0/255.0 blue:173.0/255.0 alpha:1]
+        numberTextField.layer.masksToBounds = true
+    }
+    
+    /*-(BOOL)checkStringIsNumberOrNot:(NSString*)numberStr{
+     NSCharacterSet *numbersOnly = [NSCharacterSet characterSetWithCharactersInString:@"0123456789"];
+     NSCharacterSet *characterSetFromTextField = [NSCharacterSet characterSetWithCharactersInString:numberStr];
+     BOOL stringIsValid = [numbersOnly isSupersetOfSet:characterSetFromTextField];
+     return stringIsValid;
+     }*/
+    
+    func checkStringIsNumberOrNot(numberStr : String) -> Bool {
+        let numberChar = CharacterSet(charactersIn: "0123456789")
+        let currentChar = CharacterSet(charactersIn: numberStr)
+        let isValid = numberChar.isSuperset(of: currentChar)
+        return isValid
+    }
 }
 
 // MARK: - UITextFieldDelegate
@@ -140,6 +171,9 @@ extension KWTextFieldView: UITextFieldDelegate {
   public func textField(_ textField: UITextField, shouldChangeCharactersIn range: NSRange, replacementString string: String) -> Bool {
     let currentString = numberTextField.text!
     let newString = currentString.replacingCharacters(in: textField.text!.range(from: range)!, with: string)
+    if !(checkStringIsNumberOrNot(numberStr: string)) {
+        return false
+    }
 
     if newString.count > type(of: self).maxCharactersLength {
       delegate?.moveToNext(self)
