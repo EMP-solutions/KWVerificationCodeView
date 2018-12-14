@@ -117,7 +117,7 @@ import UIKit
     }
   }
 
-  fileprivate var textFieldViews = [KWTextFieldView]()
+    fileprivate var textFieldViews = [KWTextFieldView]();
   private var keyboardAppearance = UIKeyboardAppearance.default
   private var textFieldFont = UIFont.systemFont(ofSize: 24.0)
   private var requiredDigits: UInt8 {
